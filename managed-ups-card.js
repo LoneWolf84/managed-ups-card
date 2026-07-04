@@ -133,8 +133,14 @@ class ManagedUpsCard extends HTMLElement {
   }
 
   _isOnline(statusStr) {
+    // statusStr from NUT/HA can be 'OL', 'OL CHRG', 'ol chrg', etc.
     const s = (statusStr || '').toUpperCase().trim();
-    return this._config.online_values.some(v => s.startsWith(v.toUpperCase()));
+    if (!s || s === 'N/A') return false;
+    // online_values can be array (from JS) or space-separated string (from YAML edge case)
+    const vals = Array.isArray(this._config.online_values)
+      ? this._config.online_values
+      : String(this._config.online_values || 'OL').split(',').map(v => v.trim());
+    return vals.some(v => s.startsWith(v.toUpperCase().trim()));
   }
 
   _formatRuntime(rawVal) {
@@ -174,8 +180,10 @@ class ManagedUpsCard extends HTMLElement {
       unit: slotDefs[mode]?.unit ?? '',
     };
 
-    // Colors
-    const statusColor = isOnline ? cfg.color_status_ok  : cfg.color_status_err;
+    // Colors — explicit fallbacks in case saved config is missing these keys
+    const statusColor = isOnline
+      ? (cfg.color_status_ok  || '#00ff41')
+      : (cfg.color_status_err || '#f44336');
     const infoActive  = infoState === cfg.info_option;
 
     // Logo
@@ -328,9 +336,17 @@ class ManagedUpsCardEditor extends HTMLElement {
   }
 
   setConfig(config) {
+    const prevStep = this._step;
     this._config = { ...UPS_DEFAULTS, ...config };
     if (Object.keys(config).length > 2 && this._step === 1) this._step = 2;
-    this._render();
+    // Only re-render if step changed or shadowRoot is empty (first load).
+    // This prevents the editor from jumping to another page on every keystroke.
+    if (this._step !== prevStep || !this.shadowRoot?.children.length) {
+      this._render();
+    } else {
+      // Update existing picker values without re-rendering
+      this._syncPickerValues();
+    }
   }
 
   set hass(h) {
@@ -511,6 +527,32 @@ class ManagedUpsCardEditor extends HTMLElement {
   }
 
   // ── Main render ────────────────────────────────────────────────────────────
+
+  // Update text input values without re-rendering (called on every config change
+  // that doesn't change the step — prevents losing focus while typing).
+  _syncPickerValues() {
+    if (!this.shadowRoot) return;
+    // Update text/number/select/color inputs
+    this.shadowRoot.querySelectorAll('input[data-key], select[data-key]').forEach(el => {
+      const key = el.dataset.key;
+      const val = String(this._config?.[key] ?? '');
+      if (el.type === 'color' || el.tagName === 'SELECT') {
+        if (el.value !== val) el.value = val;
+      } else {
+        // Don't overwrite if user is actively typing (document.activeElement check)
+        if (el !== document.activeElement && el.value !== val) el.value = val;
+      }
+    });
+    // Update picker values
+    this.shadowRoot.querySelectorAll('ha-entity-picker').forEach(p => {
+      const row = p.closest('[data-picker-key]');
+      if (!row) return;
+      const key = row.dataset.pickerKey;
+      const val = this._config?.[key] || '';
+      if (p.value !== val) p.value = val;
+    });
+  }
+
   _render() {
     if (!this.shadowRoot) return;
 
