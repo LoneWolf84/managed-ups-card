@@ -408,7 +408,7 @@ class ManagedUpsCardEditor extends HTMLElement {
     return `<div class="steps">${labels.map((l, i) => {
       const n = i + 1;
       const cls = this._step === n ? 'active' : n < this._step ? 'done' : '';
-      return `<button class="step-btn ${cls}" onclick="this.getRootNode().host._goStep(${n})">${l}</button>`;
+      return `<button class="step-btn ${cls}" tabindex="-1" onclick="this.getRootNode().host._goStep(${n})">${l}</button>`;
     }).join('')}</div>`;
   }
 
@@ -456,7 +456,7 @@ class ManagedUpsCardEditor extends HTMLElement {
           'es. OL,ONLINE — stati del sensore status considerati "in rete"')}
 
       <div class="nav">
-        <button class="nav-btn next" onclick="this.getRootNode().host._goStep(2)">Avanti → Sensori</button>
+        <button class="nav-btn next" tabindex="-1" onclick="this.getRootNode().host._goStep(2)">Avanti → Sensori</button>
       </div>
     </div>`;
   }
@@ -481,8 +481,8 @@ class ManagedUpsCardEditor extends HTMLElement {
       ${this._picker('Slot 4 — Frequenza uscita', 'entity_freq_out', 'sensor', 'es. Hz')}
 
       <div class="nav">
-        <button class="nav-btn prev" onclick="this.getRootNode().host._goStep(1)">← Aspetto</button>
-        <button class="nav-btn next" onclick="this.getRootNode().host._goStep(3)">→ Opzioni</button>
+        <button class="nav-btn prev" tabindex="-1" onclick="this.getRootNode().host._goStep(1)">← Aspetto</button>
+        <button class="nav-btn next" tabindex="-1" onclick="this.getRootNode().host._goStep(3)">→ Opzioni</button>
       </div>
     </div>`;
   }
@@ -521,7 +521,7 @@ class ManagedUpsCardEditor extends HTMLElement {
       </div>
 
       <div class="nav">
-        <button class="nav-btn prev" onclick="this.getRootNode().host._goStep(2)">← Sensori</button>
+        <button class="nav-btn prev" tabindex="-1" onclick="this.getRootNode().host._goStep(2)">← Sensori</button>
       </div>
     </div>`;
   }
